@@ -1,0 +1,86 @@
+# 老座机 AI 秘书 —— 软件链路配置
+# 所有路径用正斜杠，避免 Windows 反斜杠转义问题
+
+ffmpeg: "F:/projects/ffmpeg-n9.0-latest-win64-gpl-9.0/bin/ffmpeg.EXE"   # 绝对路径：挂机钩子由 SYSTEM 拉起，PATH 里没有用户安装的 ffmpeg
+
+tts:
+  engine: edge
+  voice: "zh-CN-XiaoxiaoNeural"   # edge-tts 中文女声；可换 zh-CN-YunxiNeural 男声
+
+asr:
+  engine: local           # local = faster-whisper 本地识别；volc = 火山引擎（需自行填 key）
+  # tiny / base / small / medium。实测 8k 电话窄带音频：medium 全对，small 会把
+  # 「老座机链路自检」听成「老做激烈录自检」。medium 本机约 1.2x 实时（6.6s 音频 8s），
+  # 追求低延迟可换 small（0.45x 实时）或接火山云 ASR。
+  model: "medium"
+  hf_mirror: true         # 国内从 hf-mirror.com 拉模型
+  # 模型缓存目录：放项目内，因为挂机钩子由 FreeSWITCH 服务（SYSTEM 账户）拉起，
+  # 用默认的 ~/.cache/huggingface 会以 SYSTEM 家目录为准、重新下载 460MB。
+  hf_home: "F:/projects/oldphone-ata/.cache/hf"
+  volc:
+    appid: ""
+    token: ""
+    cluster: "volcengine_input_common"
+
+pbx:
+  # FreeSWITCH 安装目录下的 fs_cli.exe
+  fs_cli: "C:/Program Files/FreeSWITCH/fs_cli.exe"
+  # 呼向座机分机的拨号串：座机在 FS 注册为分机 100
+  dial_string: "user/100"
+  # 回铃最长等待（秒）
+  ring_timeout: 45
+
+agent:
+  # echo    = 演示模式（不调真实 agent）
+  # command = 调任意命令行 agent（Codex/Claude CLI 等，需先安装）
+  # dsh     = 复用本机 DSH 桌面版自带的 headless CLI（无需另装 CLI）
+  # bridge  = 把电话指令投进「当前桌面 DSH 会话」，和 GUI 共享上下文（推荐，需装 dsh-idle-watchdog）
+  mode: bridge
+  command: 'codex exec --skip-git-repo-check "{prompt}"'
+  timeout: 900
+  # dsh 模式：true = 先挂断，后台跑完再主动回拨（推荐）；false = 当场阻塞等结果
+  async: true
+  # 回铃时念出来的答复上限（字）。agent 的长篇/表格答复会先被压成口语短句。
+  phone_reply_chars: 260
+  dsh:
+    exe: "D:/DSH/DeepSeek Harness.exe"
+    cli: "D:/DSH/resources/app.asar/dsh/node_modules/@deepseek-ai/dsh/lib/bin.js"
+    profile: "headless"      # DSH profile 名，一般不用改
+    # 私有 DSH_HOME：把 headless profile 复制到这里单独跑，
+    # 避免与桌面版抢 ~/.dsh/profiles 里的 cordis.yml（两者同时写会 EPERM）。
+    # 放在项目目录内，随项目走、不污染用户家目录；首次运行自动复制。
+    # 留空 = 用默认 ~/.dsh。
+    home: "F:/projects/oldphone-ata/.dsh-home"
+    credentials: "C:/Users/Gavin/.dsh/.credentials.yaml"   # API key 从这里读（DSH 模型设置写入的）
+    key_ref: "DEEPSEEK_API_KEY"
+    timeout: 1800
+    # DSH 沙箱（Windows ACL 模式）要求临时目录满足两条：
+    #   1) 必须在 workspace（= 项目根）之外；
+    #   2) 当前进程必须真的能写。
+    # 默认 %TEMP% 在父进程降权/计划任务令牌下写不进，会报
+    # "temp grant materialization failed" 或 lock 文件 Permission denied，
+    # 表现就是 agent「跑不了命令」。这里固定用项目旁边的独立目录。
+    temp: "F:/projects/oldphone-ata/.tmp"
+
+# bridge 模式：通过 dsh-idle-watchdog 插件把电话指令投进当前桌面 DSH 会话。
+# 电话里说的话会以「用户消息」出现在 GUI 里，和同一段上下文对话；
+# 回电是确定性的：watcher 监听会话日志，这一轮答完自动 TTS 回拨座机。
+bridge:
+  # DSH 桌面端地址：auto = 自动探测本机端口（桌面端每次重启都会换端口，实测 3244 -> 1762）
+  url: "auto"
+  # 目标会话：auto = 最近活跃的 GUI 会话；也可写死会话 id、≥6 位唯一前缀或标题
+  chat: "auto"
+  # 只投递到 cwd 匹配的会话（留空 = 不按目录过滤）；避免投错到别的项目会话
+  cwd: ""
+  # 插件生成的 API secret（0600，勿提交、勿外泄；等同该会话 agent 的 shell 权限）
+  secret_file: "C:/Users/Gavin/.dsh/idle-watchdog/api-secret"
+  # 投递请求超时（秒）：会话正在跑时插件会排队，等它接收要久一点
+  timeout: 60
+  # DSH 会话日志目录（确定性回电要解析 session.v4.jsonl.zstd）
+  sessions_dir: "C:/Users/Gavin/.dsh/sessions"
+  # 等回电的最长时间（秒）：超时就不回拨，答复仍留在会话里
+  callback_ttl_seconds: 900
+
+paths:
+  recordings: "C:/fs/recordings"
+  tts: "tts"

@@ -1,0 +1,21 @@
+<!--
+  复制到：C:\Program Files\FreeSWITCH\conf\directory\default\100.xml
+  作用：给座机（HT801）/软电话建 SIP 分机 100，密码要和设备里填的一致。
+  注意：user_context 指向独立 context "oldphone"，
+        这样分机拨出的号码只走我们自己的拨号计划，不会被系统默认规则抢先匹配
+        （默认 default context 里 6001 属于 valet_park 的 6000-6099 段）。
+-->
+<include>
+  <user id="100">
+    <params>
+      <param name="password" value="phone1234"/>
+      <param name="vm-password" value="100"/>
+    </params>
+    <variables>
+      <variable name="accountcode" value="100"/>
+      <variable name="user_context" value="oldphone"/>
+      <variable name="effective_caller_id_name" value="OldPhone"/>
+      <variable name="effective_caller_id_number" value="100"/>
+    </variables>
+  </user>
+</include>

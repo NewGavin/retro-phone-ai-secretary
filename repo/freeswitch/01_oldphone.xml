@@ -1,0 +1,16 @@
+<!--
+  复制到：C:\Program Files\FreeSWITCH\conf\dialplan\default\01_oldphone.xml
+  作用：座机摘机后自动拨 6001，FreeSWITCH 接听并录音；挂机时执行 Python 处理。
+  注意：路径按你本机实际位置改；目录里不要出现中文和空格。
+-->
+<include>
+  <extension name="oldphone_record">
+    <condition field="destination_number" expression="^6001$">
+      <action application="answer"/>
+      <action application="sleep" data="300"/>
+      <action application="set" data="rec_file=C:/fs/recordings/${strftime(%Y%m%d-%H%M%S)}-${uuid}.wav"/>
+      <action application="set" data="api_hangup_hook=system F:/projects/oldphone-ata/.venv/Scripts/python.exe F:/projects/oldphone-ata/oldphone.py listen --wav ${rec_file}"/>
+      <action application="record" data="${rec_file}"/>
+    </condition>
+  </extension>
+</include>

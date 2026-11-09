@@ -1,0 +1,29 @@
+# 运行环境与缓存（不进版本库）
+.venv/
+.cache/
+.dsh-home/
+.tmp/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# 运行产物
+repo/logs/
+repo/outbox/
+repo/tts/
+repo/tasks/
+tools/softphone/
+repo/tools/softphone/
+
+# 本地临时/探针脚本
+repo/tools/_*.py
+repo/tools/_*.ps1
+
+# 系统
+Thumbs.db
+desktop.ini
+
+# 临时市场/调试输出
+repo/.tmp_*

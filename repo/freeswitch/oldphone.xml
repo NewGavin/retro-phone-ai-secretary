@@ -1,0 +1,22 @@
+<!--
+  复制到：C:\Program Files\FreeSWITCH\conf\dialplan\oldphone.xml
+  作用：座机专用拨号计划（独立 context "oldphone"，和系统默认拨号计划完全隔离）。
+        座机摘机后自动拨 6001，FreeSWITCH 立刻接听并录音；
+        挂机后由「用户会话里的 watcher」（tools/watch_recordings.py）发现新录音并处理。
+  为什么不用 api_hangup_hook：system 是同步执行会卡挂机线程，且 FreeSWITCH 服务
+        以 SYSTEM 身份跑，拉起的 DSH 没有登录会话、沙箱起不来。
+  注意：路径按本机实际位置；"oldphone_record" 这个 context 名字要和 100.xml 里的
+        user_context 一致。
+-->
+<include>
+  <context name="oldphone">
+    <extension name="oldphone_record">
+      <condition field="destination_number" expression="^6001$">
+        <action application="answer"/>
+        <action application="sleep" data="300"/>
+        <action application="set" data="rec_file=C:/fs/recordings/${strftime(%Y%m%d-%H%M%S)}-${uuid}.wav"/>
+        <action application="record" data="${rec_file}"/>
+      </condition>
+    </extension>
+  </context>
+</include>
